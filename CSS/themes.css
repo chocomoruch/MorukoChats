@@ -1,0 +1,42 @@
+:root {
+  --bg-gradient: linear-gradient(135deg, #eaf3ff, #f5ecff);
+  --card-bg: rgba(255,255,255,0.6);
+  --accent: #4a6cf7;
+}
+
+/* ======================
+   Calm（デフォルト）
+====================== */
+[data-theme="calm"] {
+  --bg-gradient: linear-gradient(135deg, #eaf3ff, #f5ecff);
+  --card-bg: rgba(255,255,255,0.6);
+  --accent: #4a6cf7;
+}
+
+/* ======================
+   Forest
+====================== */
+[data-theme="forest"] {
+  --bg-gradient: linear-gradient(135deg, #e8f5e9, #e0f2f1);
+  --card-bg: rgba(255,255,255,0.65);
+  --accent: #2e7d32;
+}
+
+/* ======================
+   Night
+====================== */
+[data-theme="night"] {
+  --bg-gradient: linear-gradient(135deg, #1e1f2b, #2a2c3d);
+  --card-bg: rgba(40,40,60,0.7);
+  --accent: #7c8cff;
+  color: white;
+}
+
+/* ======================
+   Sakura
+====================== */
+[data-theme="sakura"] {
+  --bg-gradient: linear-gradient(135deg, #ffe4ec, #f8e8ff);
+  --card-bg: rgba(255,255,255,0.7);
+  --accent: #e91e63;
+}

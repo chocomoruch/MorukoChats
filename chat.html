@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>MorukoChats</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/themes.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- サイドバー -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <img src="logo-horizontal.png" class="sidebar-logo">
+    </div>
+
+    <div class="sidebar-content">
+      <p># global</p>
+      
+      <select id="themeSelector" class="theme-select">
+        <option value="calm">Calm</option>
+        <option value="forest">Forest</option>
+        <option value="night">Night</option>
+        <option value="sakura">Sakura</option>
+      </select>
+    </div>
+    
+
+    <button id="logoutBtn" class="logout-btn">ログアウト</button>
+  </aside>
+
+
+  <!-- メインチャット -->
+  <main class="chat-main">
+<div id="typingIndicator" class="typing-indicator"></div>
+
+    <div id="messages" class="messages"></div>
+    <div class="message-input-area">
+      <input type="text" id="messageInput" placeholder="メッセージを入力">
+      <button id="sendBtn">送信</button>
+    </div>
+
+  </main>
+
+</div>
+
+
+<!-- 名前設定モーダル -->
+<div id="nameModal" class="name-modal hidden">
+  <div class="name-card">
+    <h2>あなたの名前を教えてください</h2>
+    <p class="sub-text">あとから変更できます</p>
+    <input type="text" id="nameInput" placeholder="表示名">
+    <button id="saveNameBtn">はじめる</button>
+  </div>
+</div>
+
+<script type="module" src="chat.js"></script>
+<div id="toastContainer" class="toast-container"></div>
+</body>
+</html>

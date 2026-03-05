@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>MorukoChats | プロフィール設定</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/settings.css">
+
+</head>
+
+<body>
+
+<div class="settings-page">
+
+  <div class="settings-card">
+
+    <div class="settings-header">
+      <button id="backBtn">←</button>
+      <h2>あなたのプロフィール</h2>
+    </div>
+
+    <div class="avatar-section">
+
+      <img id="avatarPreview" class="avatar-preview">
+
+      <input type="file" id="avatarUpload" accept="image/*">
+
+    </div>
+
+    <div class="settings-field">
+      <label>表示名</label>
+      <input id="displayNameInput" placeholder="名前を入力">
+    </div>
+
+    <button id="saveSettingsBtn" class="save-btn">
+      保存
+    </button>
+
+  </div>
+
+</div>
+
+<script type="module" src="js/settings.js"></script>
+
+</body>
+</html>

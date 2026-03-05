@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>MorukoChats</title>
+
+  <!-- フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+  <div class="login-wrapper">
+
+    <div class="login-card">
+
+      <div class="logo-area">
+        <img src="logo-horizontal.png" class="logo">
+        <p class="tagline">
+          静かで、心地いい、仲間のための空間。
+        </p>
+      </div>
+
+      <button id="googleLoginBtn" class="main-btn">
+        Googleで続ける
+      </button>
+
+      <div class="divider">
+        <span>または</span>
+      </div>
+
+      <input type="email" id="email" placeholder="メールアドレス">
+      <input type="password" id="password" placeholder="パスワード">
+
+      <button id="emailLoginBtn" class="main-btn">
+        ログイン
+      </button>
+
+      <div class="guest-area">
+        <button id="guestLoginBtn" class="guest-link">
+          そのまま、のぞいてみる →
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script type="module" src="login.js"></script>
+
+</body>
+</html>
