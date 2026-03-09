@@ -28,6 +28,11 @@
         <option value="night">Night</option>
         <option value="sakura">Sakura</option>
       </select>
+
+      
+    <button onclick="location.href='settings.html'">
+    ⚙ アカウント設定
+    </button>
     </div>
     
 
@@ -35,21 +40,43 @@
   </aside>
 
 
-  <!-- メインチャット -->
-  <main class="chat-main">
-<div id="typingIndicator" class="typing-indicator"></div>
+<!-- メインチャット -->
+<main class="chat-main">
 
-    <div id="messages" class="messages"></div>
-    <div class="message-input-area">
-      <input type="text" id="messageInput" placeholder="メッセージを入力">
-      <button id="sendBtn">送信</button>
+  <!-- メッセージ表示エリア -->
+  <div id="messages" class="messages"></div>
+
+  <!-- タイピング表示 -->
+<div id="typingIndicator" class="typing-indicator hidden">
+
+  <div id="typingAvatars" class="typing-avatars"></div>
+
+  <div class="typing-bubble">
+    <div class="typing-dots">
+      <span></span>
+      <span></span>
+      <span></span>
     </div>
-
-  </main>
+  </div>
 
 </div>
 
+  <!-- 入力エリア -->
+  <div class="message-input-area">
 
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="メッセージを入力..."
+      autocomplete="off"
+    >
+    <button id="sendBtn">
+      送信
+    </button>
+
+  </div>
+
+</main>
 <!-- 名前設定モーダル -->
 <div id="nameModal" class="name-modal hidden">
   <div class="name-card">

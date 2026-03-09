@@ -8,6 +8,7 @@ const firebaseConfig = {
     authDomain: "morukochats.firebaseapp.com",
     projectId: "morukochats",
     storageBucket: "morukochats.firebasestorage.app",
+    databaseURL: "https://morukochats-default-rtdb.asia-southeast1.firebasedatabase.app",
     messagingSenderId: "1086829411607",
     appId: "1:1086829411607:web:27aaad9ba31b5dfa714b52",
 };
@@ -16,7 +17,6 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-
 /*<script type="module">
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
@@ -40,3 +40,10 @@ export const db = getFirestore(app);
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
 </script>*/
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+export const rtdb = getDatabase(app);

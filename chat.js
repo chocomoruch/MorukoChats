@@ -1,4 +1,12 @@
-import { auth, db } from "./firebase.js";
+import { auth, db, rtdb } from "./firebase.js";
+
+import {
+ ref,
+ set,
+ remove,
+ onValue,
+ onDisconnect
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 import {
   onAuthStateChanged,
@@ -20,43 +28,7 @@ import {
 const roomId = "global";
 const messagesDiv = document.getElementById("messages");
 const toastContainer = document.getElementById("toastContainer");
-let isInitialLoad = true;
-function showToast(name, text) {
-  const toast = document.createElement("div");
-  toast.classList.add("toast");
 
-  toast.innerHTML = `
-    <strong>${name}</strong><br>
-    <span>${text}</span>
-  `;
-
-  toastContainer.appendChild(toast);
-
-  // 👇 1フレーム遅らせて show を付ける
-  requestAnimationFrame(() => {
-    toast.classList.add("show");
-  });
-
-  toast.addEventListener("click", () => {
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    hideToast(toast);
-  });
-
-  setTimeout(() => {
-    hideToast(toast);
-  }, 4000);
-}
-
-function hideToast(toast) {
-  if (toast.classList.contains("hide")) return;
-
-  toast.classList.remove("show");
-  toast.classList.add("hide");
-
-  setTimeout(() => {
-    toast.remove();
-  }, 300);
-}
 const sendBtn = document.getElementById("sendBtn");
 const messageInput = document.getElementById("messageInput");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -68,274 +40,291 @@ const nameInput = document.getElementById("nameInput");
 const themeSelector = document.getElementById("themeSelector");
 
 let currentUserData = null;
+let isInitialLoad = true;
+
+const typingIndicator = document.getElementById("typingIndicator");
+
 
 // =====================
-// 認証チェック（ここに全部まとめる）
+// 認証チェック
 // =====================
+
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
+const myTypingRef = ref(rtdb,"typing/"+roomId+"/"+auth.currentUser.uid);
+onDisconnect(myTypingRef).remove();
+ if (!user) {
+  window.location.href = "login.html";
+  return;
+ }
 
-  const userRef = doc(db, "users", user.uid);
-  let snap = await getDoc(userRef);
+ const userRef = doc(db, "users", user.uid);
+ let snap = await getDoc(userRef);
 
-  // usersドキュメントがない場合は作成
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      uid: user.uid,
-      displayName: "Guest",
-      theme: "calm",
-      createdAt: serverTimestamp()
-    });
-    snap = await getDoc(userRef);
-  }
+ if (!snap.exists()) {
 
-  currentUserData = snap.data();
+  await setDoc(userRef,{
+   uid:user.uid,
+   displayName:"Guest",
+   theme:"calm",
+   createdAt:serverTimestamp()
+  });
 
-  // テーマ適用
-  const theme = currentUserData.theme || "calm";
-  document.body.setAttribute("data-theme", theme);
-  if (themeSelector) themeSelector.value = theme;
+  snap = await getDoc(userRef);
 
-  // 名前未設定ならモーダル表示
-  if (!currentUserData.displayName || currentUserData.displayName === "Guest") {
-    nameModal.classList.remove("hidden");
-  }
+ }
 
-  loadMessages();
+ currentUserData = snap.data();
+
+ const theme = currentUserData.theme || "calm";
+ document.body.setAttribute("data-theme", theme);
+
+ if (themeSelector) themeSelector.value = theme;
+
+ if (!currentUserData.displayName || currentUserData.displayName === "Guest") {
+  nameModal.classList.remove("hidden");
+ }
+
+ loadMessages();
+ setupTyping();
+
 });
+
 
 // =====================
 // メッセージ送信
 // =====================
+
 sendBtn.addEventListener("click", sendMessage);
-messageInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
+
+messageInput.addEventListener("keypress",(e)=>{
+ if(e.key==="Enter") sendMessage();
 });
 
-async function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
+async function sendMessage(){
 
-  await addDoc(collection(db, "rooms", roomId, "messages"), {
-    text: text,
-    uid: auth.currentUser.uid,
-    displayName: currentUserData.displayName,
-    avatar: currentUserData.avatar || null,
-    createdAt: serverTimestamp()
-  });
+ const text = messageInput.value.trim();
+ if(!text) return;
 
-  messageInput.value = "";
+ await addDoc(collection(db,"rooms",roomId,"messages"),{
+
+  text:text,
+  uid:auth.currentUser.uid,
+  displayName:currentUserData.displayName,
+  avatar:currentUserData.avatar || null,
+  createdAt:serverTimestamp()
+
+ });
+
+ messageInput.value="";
+
 }
+
+// =====================
+// Typing送信
+// =====================
+
+const typingRef = ref(rtdb, "typing/" + roomId + "/" + auth.currentUser?.uid);
+
+let typingTimeout;
+
+messageInput.addEventListener("input", () => {
+
+ if(!auth.currentUser) return;
+
+ const userTypingRef = ref(rtdb,"typing/"+roomId+"/"+auth.currentUser.uid);
+
+ set(userTypingRef,{
+  uid:auth.currentUser.uid,
+  name:currentUserData.displayName
+ });
+
+ clearTimeout(typingTimeout);
+
+ typingTimeout=setTimeout(()=>{
+  remove(userTypingRef);
+ },5000);
+
+});
 
 // =====================
 // メッセージ読み込み
 // =====================
-function loadMessages() {
 
-  const q = query(
-    collection(db, "rooms", roomId, "messages"),
-    orderBy("createdAt")
-  );
+function loadMessages(){
 
-  onSnapshot(q, (snapshot) => {
+ const q = query(
+  collection(db,"rooms",roomId,"messages"),
+  orderBy("createdAt")
+ );
 
-    snapshot.docChanges().forEach((change) => {
+ onSnapshot(q,(snapshot)=>{
 
-      const data = change.doc.data();
+  snapshot.docChanges().forEach((change)=>{
 
-      // =====================
-      // 新規メッセージ
-      // =====================
-      if (change.type === "added") {
+   const data = change.doc.data();
 
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add("message", "new-message");
-              
-        if (data.uid === auth.currentUser.uid) {
-          msgDiv.classList.add("my-message");
-        }
-        
-        msgDiv.innerHTML = `
-          <img class="message-avatar"
-               src="${data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${data.uid}`}" />
-        
-          <div class="message-content">
-              <div class="message-name">${data.displayName}</div>
-              <div class="message-text">${data.text}</div>
-          </div>
-        `;
-        
-        messagesDiv.appendChild(msgDiv);
+   if(change.type==="added"){
 
-        // 🔔 通知
-        if (!isInitialLoad && data.uid !== auth.currentUser.uid) {
+    const msgDiv=document.createElement("div");
+    msgDiv.classList.add("message","new-message");
 
-          const isAtBottom =
-            messagesDiv.scrollHeight - messagesDiv.scrollTop <=
-            messagesDiv.clientHeight + 50;
+    if(data.uid===auth.currentUser.uid){
+     msgDiv.classList.add("my-message");
+    }
 
-          if (!isAtBottom) {
-            showToast(data.displayName, data.text);
-          }
+    msgDiv.innerHTML=`
+      ${createAvatar(data.displayName,data.uid)}
 
-        }
+      <div class="message-content">
+       <div class="message-name">${data.displayName}</div>
+       <div class="message-text">${data.text}</div>
+      </div>
+    `;
 
-      }
+    messagesDiv.appendChild(msgDiv);
 
-    });
-
-    // 自動スクロール
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-    isInitialLoad = false;
+   }
 
   });
+
+  messagesDiv.scrollTop=messagesDiv.scrollHeight;
+
+  isInitialLoad=false;
+
+ });
 
 }
 
 // =====================
 // ログアウト
 // =====================
-logoutBtn.addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.href = "index.html";
+
+logoutBtn.addEventListener("click",async()=>{
+
+ await signOut(auth);
+ window.location.href="index.html";
+
 });
+
 
 // =====================
 // 名前保存
 // =====================
-saveNameBtn.addEventListener("click", async () => {
-  const newName = nameInput.value.trim();
 
-  if (newName.length < 2) {
-    alert("名前は2文字以上にしてください");
-    return;
-  }
-  
-  if (!newName) {
-    alert("名前を入力してください");
-    return;
-  }
+saveNameBtn.addEventListener("click",async()=>{
 
-  const userRef = doc(db, "users", auth.currentUser.uid);
+ const newName=nameInput.value.trim();
 
-  await setDoc(userRef, {
-    displayName: newName
-  }, { merge: true });
+ if(newName.length<2){
+  alert("名前は2文字以上にしてください");
+  return;
+ }
 
-  currentUserData.displayName = newName;
-  nameModal.classList.add("hidden");
+ const userRef=doc(db,"users",auth.currentUser.uid);
+
+ await setDoc(userRef,{
+  displayName:newName
+ },{merge:true});
+
+ currentUserData.displayName=newName;
+ nameModal.classList.add("hidden");
+
 });
+
+
 // =====================
-// テーマ変更
+// アバター生成
 // =====================
-// 初期適用
-const savedTheme = localStorage.getItem("morukoTheme") || "calm";
-document.body.setAttribute("data-theme", savedTheme);
 
-if (themeSelector) {
-  themeSelector.value = savedTheme;
+function createAvatar(displayName,uid){
 
-  themeSelector.addEventListener("change", () => {
-    const selectedTheme = themeSelector.value;
+ const letter=displayName.charAt(0).toUpperCase();
 
-    // フェードアウト
-    document.body.classList.add("theme-fade");
+ const colors=[
+  "#6BA8FF",
+  "#FF8AAE",
+  "#7ED7A6",
+  "#FFB86B",
+  "#C79CFF",
+  "#8FD3FF"
+ ];
 
-    setTimeout(() => {
-      // テーマ変更
-      document.body.setAttribute("data-theme", selectedTheme);
-      localStorage.setItem("morukoTheme", selectedTheme);
+ let hash=0;
 
-      // フェードイン
-      document.body.classList.remove("theme-fade");
-    }, 250);
-  });
+ for(let i=0;i<uid.length;i++){
+  hash=uid.charCodeAt(i)+((hash<<5)-hash);
+ }
+
+ const color=colors[Math.abs(hash)%colors.length];
+
+ return `
+  <div class="avatar-letter" style="background:${color}">
+   ${letter}
+  </div>
+ `;
+
 }
 
 // =====================
-// タイピング
+// Typing表示
 // =====================
-const typingIndicator = document.getElementById("typingIndicator");
-let typingTimeout;
 
-messageInput.addEventListener("input", async () => {
+function setupTyping(){
 
-  const typingRef = doc(db, "rooms", roomId, "typing", auth.currentUser.uid);
+ const typingRoomRef = ref(rtdb,"typing/"+roomId);
 
-  await setDoc(typingRef, {
-    name: currentUserData.displayName,
-    typing: true
-  });
+ onValue(typingRoomRef,(snapshot)=>{
 
-  clearTimeout(typingTimeout);
+  const data = snapshot.val();
 
-  typingTimeout = setTimeout(async () => {
+  const avatarsDiv = document.getElementById("typingAvatars");
 
-    await setDoc(typingRef, {
-      name: currentUserData.displayName,
-      typing: false
-    });
+  if(!data){
 
-  }, 2000);
+   typingIndicator.classList.add("hidden");
+   avatarsDiv.innerHTML="";
+   return;
 
-});
-
-const typingCollection = collection(db, "rooms", roomId, "typing");
-
-onSnapshot(typingCollection, (snapshot) => {
-
-  let typingUsers = [];
-
-  snapshot.forEach((docSnap) => {
-
-    const data = docSnap.data();
-
-    if (data.typing && docSnap.id !== auth.currentUser.uid) {
-      typingUsers.push(data.name);
-    }
-
-  });
-
-  if (typingUsers.length > 0) {
-    typingIndicator.textContent = typingUsers.join(", ") + " が入力中...";
-  } else {
-    typingIndicator.textContent = "";
   }
 
-});
+  const users = Object.values(data)
+   .filter(user=>user.uid!==auth.currentUser.uid);
 
+  if(users.length===0){
 
-// =====================
-// アバター
-// =====================
-function createAvatar(displayName, uid) {
+   typingIndicator.classList.add("hidden");
+   avatarsDiv.innerHTML="";
+   return;
 
-  const letter = displayName.charAt(0).toUpperCase();
-
-  const colors = [
-    "#6BA8FF",
-    "#FF8AAE",
-    "#7ED7A6",
-    "#FFB86B",
-    "#C79CFF",
-    "#8FD3FF"
-  ];
-
-  let hash = 0;
-
-  for (let i = 0; i < uid.length; i++) {
-    hash = uid.charCodeAt(i) + ((hash << 5) - hash);
   }
 
-  const color = colors[Math.abs(hash) % colors.length];
+  typingIndicator.classList.remove("hidden");
+  avatarsDiv.innerHTML="";
 
-  return `
-    <div class="avatar-letter" style="background:${color}">
-      ${letter}
-    </div>
-  `;
+  users.slice(0,3).forEach(user=>{
+
+   const avatar=document.createElement("div");
+   avatar.className="avatar";
+
+   avatar.innerHTML=createAvatar(user.name,user.uid);
+
+   avatarsDiv.appendChild(avatar);
+
+  });
+
+  if(users.length>3){
+
+   const more=document.createElement("div");
+   more.className="avatar-more";
+   more.textContent="+"+(users.length-3);
+
+   avatarsDiv.appendChild(more);
+
+  }
+
+  messagesDiv.appendChild(typingIndicator);
+  messagesDiv.scrollTop=messagesDiv.scrollHeight;
+
+ });
+
 }
